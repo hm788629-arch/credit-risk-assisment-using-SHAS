@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+pandas
+numpy
+joblib
+# IMPORTANT: pin scikit-learn to the exact version you trained/saved the model with
+# (check locally with: pip show scikit-learn), e.g. scikit-learn==1.5.2
+scikit-learn
+# If your pipeline uses xgboost / lightgbm / catboost, add it here too.
