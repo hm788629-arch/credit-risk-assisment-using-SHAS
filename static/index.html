@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Loan default risk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="page-head">
+      <h1>Loan default risk</h1>
+      <p>Enter an application and the model estimates how likely it is to default.</p>
+    </header>
+
+    <div class="layout">
+      <!-- ============ FORM ============ -->
+      <form id="loan-form" class="panel form" novalidate>
+        <fieldset>
+          <legend>Applicant</legend>
+          <div class="grid two">
+            <label class="field">
+              <span>Age</span>
+              <input type="number" name="person_age" min="18" max="100" step="1" placeholder="e.g. 29" required />
+            </label>
+            <label class="field">
+              <span>Annual income</span>
+              <input type="number" name="person_income" min="1" step="any" placeholder="e.g. 55000" required />
+            </label>
+            <label class="field">
+              <span>Years employed</span>
+              <input type="number" name="person_emp_length" min="0" max="60" step="any" placeholder="e.g. 4" required />
+            </label>
+            <div class="field">
+              <span id="lbl-home">Home ownership</span>
+              <div class="segmented" role="radiogroup" aria-labelledby="lbl-home">
+                <label><input type="radio" name="person_home_ownership" value="RENT" checked /><span>Rent</span></label>
+                <label><input type="radio" name="person_home_ownership" value="MORTGAGE" /><span>Mortgage</span></label>
+                <label><input type="radio" name="person_home_ownership" value="OWN" /><span>Own</span></label>
+                <label><input type="radio" name="person_home_ownership" value="OTHER" /><span>Other</span></label>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Loan</legend>
+          <div class="grid two">
+            <label class="field">
+              <span>Purpose</span>
+              <select name="loan_intent" required>
+                <option value="EDUCATION">Education</option>
+                <option value="MEDICAL">Medical</option>
+                <option value="VENTURE">Venture</option>
+                <option value="PERSONAL">Personal</option>
+                <option value="HOMEIMPROVEMENT">Home improvement</option>
+                <option value="DEBTCONSOLIDATION">Debt consolidation</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Loan amount</span>
+              <input type="number" name="loan_amnt" min="1" step="any" placeholder="e.g. 12000" required />
+            </label>
+            <label class="field">
+              <span>Interest rate (%)</span>
+              <input type="number" name="loan_int_rate" min="0" max="40" step="any" placeholder="e.g. 11.5" required />
+            </label>
+            <div class="field">
+              <span>Loan as share of income</span>
+              <output id="pct-income" class="readout">Calculated from the amounts</output>
+            </div>
+            <div class="field full">
+              <span id="lbl-grade">Loan grade</span>
+              <div class="segmented grades" role="radiogroup" aria-labelledby="lbl-grade">
+                <label><input type="radio" name="loan_grade" value="A" /><span>A</span></label>
+                <label><input type="radio" name="loan_grade" value="B" checked /><span>B</span></label>
+                <label><input type="radio" name="loan_grade" value="C" /><span>C</span></label>
+                <label><input type="radio" name="loan_grade" value="D" /><span>D</span></label>
+                <label><input type="radio" name="loan_grade" value="E" /><span>E</span></label>
+                <label><input type="radio" name="loan_grade" value="F" /><span>F</span></label>
+                <label><input type="radio" name="loan_grade" value="G" /><span>G</span></label>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Credit history</legend>
+          <div class="grid two">
+            <div class="field">
+              <span id="lbl-default">Has defaulted before</span>
+              <div class="segmented" role="radiogroup" aria-labelledby="lbl-default">
+                <label><input type="radio" name="cb_person_default_on_file" value="N" checked /><span>No</span></label>
+                <label><input type="radio" name="cb_person_default_on_file" value="Y" /><span>Yes</span></label>
+              </div>
+            </div>
+            <label class="field">
+              <span>Credit history length (years)</span>
+              <input type="number" name="cb_person_cred_hist_length" min="0" max="60" step="1" placeholder="e.g. 5" required />
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" id="submit-btn" class="btn primary">
+            <span class="btn-label">Assess risk</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+          <button type="button" id="sample-btn" class="btn ghost">Fill sample</button>
+          <button type="reset" id="reset-btn" class="btn ghost">Clear</button>
+        </div>
+      </form>
+
+      <!-- ============ RESULT ============ -->
+      <aside class="panel result" id="result" data-state="idle" aria-live="polite">
+        <h2>Assessment</h2>
+
+        <div class="gauge">
+          <svg viewBox="0 0 220 125" role="img" aria-label="Default probability gauge">
+            <path class="track" d="M 20 110 A 90 90 0 0 1 200 110" />
+            <path class="fill" id="gauge-fill" d="M 20 110 A 90 90 0 0 1 200 110" />
+            <line id="threshold-tick" class="tick" x1="0" y1="0" x2="0" y2="0" />
+          </svg>
+          <div class="gauge-value">
+            <strong id="prob-number">&ndash;</strong>
+            <small>chance of default</small>
+          </div>
+        </div>
+
+        <div class="verdict" id="verdict">
+          <span class="dot"></span>
+          <span id="verdict-text">Waiting for an application</span>
+        </div>
+
+        <p class="status" id="status"></p>
+
+        <dl class="facts" id="facts">
+          <div><dt>Decision threshold</dt><dd id="fact-threshold">&ndash;</dd></div>
+          <div><dt>Distance from threshold</dt><dd id="fact-margin">&ndash;</dd></div>
+          <div><dt>Loan as share of income</dt><dd id="fact-pct">&ndash;</dd></div>
+        </dl>
+
+        <p class="note">A statistical estimate to support a decision, not a decision in itself.</p>
+      </aside>
+    </div>
+  </main>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
